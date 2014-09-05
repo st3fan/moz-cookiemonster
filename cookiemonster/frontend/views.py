@@ -15,7 +15,13 @@ from cookiemonster.frontend.persona import verify_assertion
 from cookiemonster.frontend import app
 from cookiemonster.frontend.mozillians import lookup_mozillian
 
-#
+from pymongo import MongoClient, DESCENDING
+from bson.objectid import ObjectId
+
+
+client = MongoClient()
+db = client.cookiemonster
+
 
 def login_required(f):
     @functools.wraps(f)
@@ -26,13 +32,13 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-#
 
 @app.route("/")
 def index():
     if session.get("email") is None:
         return redirect(url_for("login"))
-    return 'Hello <a href="/logout">Logout</a>'
+    report = db.reports.find_one({"state":"FINISHED"}, sort=[("created", DESCENDING)])
+    return render_template("index.html", report=report)
 
 @app.route("/login")
 def login():
@@ -49,7 +55,6 @@ def logout():
 def heartbeat():
     return "OK"
 
-#
 
 @app.route("/persona/login", methods=["POST"])
 def persona_login():
@@ -64,4 +69,3 @@ def persona_login():
             return jsonify(success=False, error="only-mozilla")
     session["email"] = receipt["email"]
     return jsonify(success=True, email=receipt["email"], next=session.get("next"))
-

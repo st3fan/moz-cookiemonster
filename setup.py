@@ -8,6 +8,7 @@ from setuptools import setup
 
 install_requires = [
     'Flask==0.10.1',
+    'pymongo==2.7',
     'requests==2.3.0'
 ]
 

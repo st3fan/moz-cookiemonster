@@ -1,0 +1,97 @@
+#!/usr/bin/env python
+
+
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/
+
+
+import datetime
+import json
+import sys
+import time
+
+import requests
+
+from pymongo import MongoClient
+from bson.objectid import ObjectId
+
+
+PERSONA_EMAIL = os.getenv("COOKIEMONSTER_PERSONA_EMAIL")
+PERSONA_PASSWORD = os.getenv("COOKIEMONSTER_PERSONA_PASSWORD")
+
+
+def login(config):
+
+    submit_headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+    submit_request = requests.post("https://middleman-stage.sateh.com/sessions", data=json.dumps(config), headers=submit_headers)
+    submit_request.raise_for_status()
+    submit_json = submit_request.json()
+
+    while True:
+
+        poll_request = requests.get("https://middleman-stage.sateh.com/sessions/%s" % submit_json["id"])
+        poll_request.raise_for_status()
+        poll_json = poll_request.json()
+
+        if poll_json["state"] != "WORKING":
+            return poll_json
+
+        time.sleep(1)
+
+
+if __name__ == "__main__":
+
+    if False:
+        config = { "url": "https://mozillians.org",
+                   "method": "persona",
+                   "email": PERSONA_EMAIL,
+                   "password": PERSONA_PASSWORD,
+                   "login_button_xpath": "//a[@id='nav-login']",
+                   "after_login_element_xpath": "//span[@class='username']" }
+
+        print login(config)
+        sys.exit(0)
+
+    client = MongoClient()
+    db = client.cookiemonster
+
+    #
+    # Create a report with all the sites we have
+    #
+
+    report = { "state":"STARTED",
+               "created":datetime.datetime.utcnow(),
+               "finished":None,
+               "sites":[dict(_id=s["_id"], url=s["url"], cookies=[]) for s in db.sites.find()] }
+    report_id = db.reports.insert(report)
+
+    #
+    # Run each site against middleman
+    #
+
+    for report_site in report["sites"]:
+        print "Looking at ", report_site["url"]
+
+        site = db.sites.find_one({"_id":report_site["_id"]})
+        if site is not None:
+            config = site["config"]
+            config["email"] = PERSONA_EMAIL
+            config["password"] = PERSONA_PASSWORD
+            result = login(config)
+            if result is not None:
+                screenshot = result.get("screenshot")
+                if screenshot:
+                    screenshot = screenshot.replace("http://127.0.0.1:8080", "https://middleman-stage.sateh.com")
+                db.reports.update({"_id": report_id, "sites._id": site["_id"]},
+                                  {"$set": {"sites.$.cookies": result.get("cookies"),
+                                            "sites.$.state": result.get("state"),
+                                            "sites.$.screenshot": screenshot }})
+
+    #
+    # Update the report to finishes
+    #
+
+    db.reports.update({"_id": report_id},
+                 {"$set": {"state": "FINISHED",
+                           "finished": datetime.datetime.utcnow()}})
