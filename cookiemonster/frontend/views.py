@@ -77,3 +77,21 @@ def persona_login():
             return jsonify(success=False, error="only-mozilla")
     session["email"] = receipt["email"]
     return jsonify(success=True, email=receipt["email"], next=session.get("next"))
+
+@app.template_filter()
+def labelfor(v, t):
+    if t == "state":
+        if v == "SUCCESS":
+            return "label label-success"
+        else:
+            return "label label-danger"
+    if t in ("secure", "httponly"):
+        if v == True:
+            return "label label-success"
+        else:
+            return "label label-danger"
+
+@app.template_filter()
+def hostname(v):
+    u = urlparse.urlparse(v)
+    return u.hostname
