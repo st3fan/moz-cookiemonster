@@ -7,6 +7,7 @@ import functools
 import json
 import os
 import os.path
+import random
 import urlparse
 
 from flask import request, session, render_template, redirect, url_for, jsonify, Response
@@ -32,13 +33,20 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def random_message():
+    messages = [
+        "Cookie starts with C",
+        "C is for cookie, that's good enough for me",
+        "Oh, cookie, cookie, cookie starts with C"
+    ]
+    return random.choice(messages)
 
 @app.route("/")
 def index():
     if session.get("email") is None:
         return redirect(url_for("login"))
     report = db.reports.find_one({"state":"FINISHED"}, sort=[("created", DESCENDING)])
-    return render_template("index.html", report=report)
+    return render_template("index.html", report=report, message=random_message())
 
 @app.route("/login")
 def login():
