@@ -8,6 +8,7 @@
 
 import datetime
 import json
+import os
 import sys
 import time
 
@@ -42,19 +43,20 @@ def login(config):
 
 if __name__ == "__main__":
 
-    if False:
-        config = { "url": "https://mozillians.org",
-                   "method": "persona",
-                   "email": PERSONA_EMAIL,
-                   "password": PERSONA_PASSWORD,
-                   "login_button_xpath": "//a[@id='nav-login']",
-                   "after_login_element_xpath": "//span[@class='username']" }
-
-        print login(config)
-        sys.exit(0)
-
     client = MongoClient()
     db = client.cookiemonster
+
+    if len(sys.argv) == 2:
+        url = sys.argv[1]
+        site = db.sites.find_one({"url":url})
+        if not site:
+            print "Cannot find", url
+            sys.exit(1)
+        print "Logging in to ", url
+        site["config"]["email"] = PERSONA_EMAIL
+        site["config"]["password"] = PERSONA_PASSWORD
+        print login(site["config"])
+        sys.exit(0)
 
     #
     # Create a report with all the sites we have
