@@ -4,6 +4,7 @@
 
 import requests
 
+
 def lookup_mozillian(app_name, app_key, email):
     params = dict(app_name=app_name, app_key=app_key, email=email)
     r = requests.get("https://mozillians.org/api/v1/users/", params=params)
