@@ -21,10 +21,10 @@ PERSONA_EMAIL = os.getenv("COOKIEMONSTER_PERSONA_EMAIL")
 PERSONA_PASSWORD = os.getenv("COOKIEMONSTER_PERSONA_PASSWORD")
 
 
-def login(config):
-
+def login(site_config):
     submit_headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
-    submit_request = requests.post("https://middleman-stage.sateh.com/sessions", data=json.dumps(config), headers=submit_headers)
+    submit_request = requests.post("https://middleman-stage.sateh.com/sessions", data=json.dumps(site_config),
+                                   headers=submit_headers)
     submit_request.raise_for_status()
     submit_json = submit_request.json()
 
@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
     if len(sys.argv) == 2:
         url = sys.argv[1]
-        site = db.sites.find_one({"url":url})
+        site = db.sites.find_one({"url": url})
         if not site:
             print "Cannot find", url
             sys.exit(1)
@@ -61,10 +61,10 @@ if __name__ == "__main__":
     # Create a report with all the sites we have
     #
 
-    report = { "state":"STARTED",
-               "created":datetime.datetime.utcnow(),
-               "finished":None,
-               "sites":[dict(_id=s["_id"], url=s["url"], cookies=[]) for s in db.sites.find()] }
+    report = {"state": "STARTED",
+              "created": datetime.datetime.utcnow(),
+              "finished": None,
+              "sites": [dict(_id=s["_id"], url=s["url"], cookies=[]) for s in db.sites.find()]}
     report_id = db.reports.insert(report)
 
     #
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     for report_site in report["sites"]:
         print "Looking at ", report_site["url"]
 
-        site = db.sites.find_one({"_id":report_site["_id"]})
+        site = db.sites.find_one({"_id": report_site["_id"]})
         if site is not None:
             config = site["config"]
             config["email"] = PERSONA_EMAIL
@@ -87,12 +87,12 @@ if __name__ == "__main__":
                 db.reports.update({"_id": report_id, "sites._id": site["_id"]},
                                   {"$set": {"sites.$.cookies": result.get("cookies"),
                                             "sites.$.state": result.get("state"),
-                                            "sites.$.screenshot": screenshot }})
+                                            "sites.$.screenshot": screenshot}})
 
     #
     # Update the report to finishes
     #
 
     db.reports.update({"_id": report_id},
-                 {"$set": {"state": "FINISHED",
-                           "finished": datetime.datetime.utcnow()}})
+                      {"$set": {"state": "FINISHED",
+                                "finished": datetime.datetime.utcnow()}})

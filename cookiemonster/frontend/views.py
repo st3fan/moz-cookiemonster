@@ -87,7 +87,7 @@ def labelfor(v, t):
         else:
             return "label label-danger"
     if t in ("secure", "httponly"):
-        if v == True:
+        if v:
             return "label label-success"
         else:
             return "label label-danger"
