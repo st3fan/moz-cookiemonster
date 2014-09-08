@@ -3,13 +3,15 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 from flask import Flask
-app = Flask(__name__);
+
+app = Flask(__name__)
 
 from cookiemonster.frontend import views
 
-def configure_app(app, filename):
+
+def configure_app(web_app, filename):
     if not filename:
-        app.config.from_object('cookiemonster.frontend.config.DefaultConfig')
+        web_app.config.from_object('cookiemonster.frontend.config.DefaultConfig')
     else:
-        app.config.from_pyfile(filename)
-    return app
+        web_app.config.from_pyfile(filename)
+    return web_app
