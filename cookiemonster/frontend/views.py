@@ -43,7 +43,8 @@ def index():
     if session.get("email") is None:
         return redirect(url_for("login"))
     report = db.reports.find_one({"state": "FINISHED"}, sort=[("created", DESCENDING)])
-    return render_template("index.html", report=report, message=random_message())
+    return render_template("index.html", report=report, message=random_message(),
+                           middleman=app.config["COOKIEMONSTER_MIDDLEMAN"])
 
 
 @app.route("/login")

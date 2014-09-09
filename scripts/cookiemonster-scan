@@ -81,13 +81,10 @@ if __name__ == "__main__":
             config["password"] = PERSONA_PASSWORD
             result = login(config)
             if result is not None:
-                screenshot = result.get("screenshot")
-                if screenshot:
-                    screenshot = screenshot.replace("http://127.0.0.1:8080", "https://middleman-stage.sateh.com")
                 db.reports.update({"_id": report_id, "sites._id": site["_id"]},
                                   {"$set": {"sites.$.cookies": result.get("cookies"),
                                             "sites.$.state": result.get("state"),
-                                            "sites.$.screenshot": screenshot}})
+                                            "sites.$.screenshot": result.get("screenshot")}})
 
     #
     # Update the report to finishes
